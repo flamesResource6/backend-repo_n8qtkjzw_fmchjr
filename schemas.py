@@ -1,48 +1,52 @@
 """
-Database Schemas
+Database Schemas for the Real Estate Investing SaaS
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents one MongoDB collection. The collection name
+is the lowercase of the class name (e.g., Property -> "property").
 """
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
 
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
-
-class User(BaseModel):
+class Property(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Properties listed/deal feed items
+    Collection: "property"
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    title: str = Field(..., description="Listing headline")
+    address: str = Field(..., description="Street address")
+    city: str = Field(..., description="City")
+    state: str = Field(..., description="US state (2-letter)")
+    zipcode: str = Field(..., description="ZIP Code")
+    price: float = Field(..., ge=0, description="Asking price in USD")
+    cap_rate: Optional[float] = Field(None, ge=0, le=100, description="Cap rate percentage")
+    cash_on_cash: Optional[float] = Field(None, ge=0, le=100, description="Cash-on-cash return percentage")
+    units: Optional[int] = Field(None, ge=0, description="Number of units (multifamily)")
+    property_type: str = Field(..., description="Type: SFR, Multifamily, Industrial, Retail, Land, etc.")
+    images: Optional[List[str]] = Field(default_factory=list, description="Image URLs")
+    source: Optional[str] = Field(None, description="Lead source or marketplace")
+    latitude: Optional[float] = Field(None, description="Latitude")
+    longitude: Optional[float] = Field(None, description="Longitude")
 
-class Product(BaseModel):
+class Savedsearch(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Saved Searches for users to monitor markets
+    Collection: "savedsearch"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    name: str = Field(..., description="Saved search name")
+    email: EmailStr = Field(..., description="Subscriber email")
+    markets: List[str] = Field(default_factory=list, description="List of markets like 'Austin, TX'")
+    min_price: Optional[float] = Field(None, ge=0)
+    max_price: Optional[float] = Field(None, ge=0)
+    min_cap_rate: Optional[float] = Field(None, ge=0, le=100)
+    property_types: List[str] = Field(default_factory=list)
 
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Lead(BaseModel):
+    """
+    Inbound contact/lead submissions
+    Collection: "lead"
+    """
+    name: str
+    email: EmailStr
+    message: Optional[str] = None
+    company: Optional[str] = None
+    phone: Optional[str] = None
